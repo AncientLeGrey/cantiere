@@ -22,12 +22,33 @@ require 'cantiere/defaults'
 require 'ostruct'
 
 module Cantiere
-  CONFIG_FILE = "#{ENV['HOME']}/.cantiere/config"
+
+  ROOT_DIR = `pwd`.strip
+
+  # use the first existing config file in this order:
+  CONFIG_FILE = [
+    "#{ROOT_DIR}/cantiere.yml",
+    "#{ENV['HOME']}/.cantiere/config",
+  ].select do |file|
+    file if File.exist?(file)
+  end.first.to_s
 
   class Config
     RELEASE_FILE = "/etc/redhat-release"
 
     def initialize( project_config = Hash.new )
+
+      if File.exists?( CONFIG_FILE )
+        @data = YAML.load_file( CONFIG_FILE )
+        raise "Your config file (#{CONFIG_FILE}) has incorrect format. Please correct it." if @data.nil?
+      else
+        @data = {}
+      end
+
+      # copy values from the config file into the project_config hash
+      @data.each do |key, value|
+        project_config[key.to_sym] = value
+      end
 
       @name = project_config[:name] || DEFAULT_PROJECT_CONFIG[:name]
 
@@ -36,7 +57,7 @@ module Cantiere
       @version.release = project_config[:release] || DEFAULT_PROJECT_CONFIG[:release]
 
       @dir = OpenStruct.new
-      @dir.root = `pwd`.strip
+      @dir.root = ROOT_DIR  || DEFAULT_PROJECT_CONFIG[:dir_root]
       @dir.build = project_config[:dir_build] || DEFAULT_PROJECT_CONFIG[:dir_build]
       @dir.top = project_config[:dir_top] || "#{@dir.build}/topdir"
       @dir.src_cache = project_config[:dir_sources_cache] || DEFAULT_PROJECT_CONFIG[:dir_sources_cache]
@@ -72,13 +93,6 @@ module Cantiere
         @os.code_name = release_match[3]
       else
         raise "OS'es other than Fedora or Red Hat are currently unsupported"
-      end
-
-      if File.exists?( CONFIG_FILE )
-        @data = YAML.load_file( CONFIG_FILE )
-        raise "Your config file (#{CONFIG_FILE}) has incorrect format. Please correct it." if @data.nil?
-      else
-        @data = {}
       end
 
       @build_arch = ENV['CANTIERE_ARCH'].nil? ? @arch : ENV['CANTIERE_ARCH']

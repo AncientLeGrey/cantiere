@@ -1,1 +1,15 @@
+Cantiere
+========
+
 Cantiere helper tasks to build RPM from .spec files
+
+Store a cantiere.yml file in you project folder to overwrite configuration.
+
+Find additional help
+--------------------
+* http://community.jboss.org/wiki/StormGrindCantiereRakeTasks
+* http://community.jboss.org/wiki/StormGrindCantiereUsingCantiere
+
+Examples
+--------
+* https://github.com/torquebox/torquebox-appliances
