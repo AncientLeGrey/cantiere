@@ -40,6 +40,11 @@ module Cantiere
       task "rpm:repodata:force" => [ 'rpm:topdir' ] do
         createrepo
       end
+
+      desc "Create a repoview of the repository data"
+      task "rpm:repoview" => [ 'rpm:repodata:force' ] do
+        repoview
+      end
     end
 
     def createrepo
@@ -48,12 +53,26 @@ module Cantiere
       for os in @oses.keys
         for version in @oses[os]
           for arch in @arches
-            @exec_helper.execute( "createrepo --update #{@config.dir.top}/#{os}/#{version}/RPMS/#{arch}" )
+            @exec_helper.execute( "createrepo --database --update #{@config.dir.top}/#{os}/#{version}/RPMS/#{arch}" )
           end
         end
       end
 
       @log.debug "Refreshing repodata finished."
+    end
+
+    def repoview
+      @log.debug "Refreshing repoview..."
+
+      for os in @oses.keys
+        for version in @oses[os]
+          for arch in @arches
+            @exec_helper.execute( "repoview -t \"#{@config.name}\" #{@config.dir.top}/#{os}/#{version}/RPMS/#{arch}" )
+          end
+        end
+      end
+
+      @log.debug "Refreshing repoview finished."
     end
   end
 end
